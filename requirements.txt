@@ -19,3 +19,4 @@ sqlparse==0.5.3
 tenacity==9.1.2
 urllib3==2.5.0
 drf_spectacular
+gunicorn
