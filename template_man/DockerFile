@@ -1,0 +1,41 @@
+# template_man/Dockerfile
+# Use the official Python image from the Docker Hub
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file first to leverage Docker cache layers
+COPY requirements.txt .
+
+# Install system dependencies required by some Python packages (like psycopg2-binary, redis hiredis cluster)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        python3-dev \
+        redis-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Copy the rest of the application code
+COPY . .
+
+# Create a non-root user and group (optional but recommended for security)
+RUN adduser --disabled-password --gecos '' appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+
+EXPOSE 8000
+
+# Command to run the application using Uvicorn ASGI server
+# Assumes you have 'uvicorn' in your requirements.txt
+CMD ["sh", "-c", "uvicorn template_man.asgi:application --host 0.0.0.0 --port $PORT"]
